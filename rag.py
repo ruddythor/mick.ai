@@ -24,11 +24,12 @@ client = OpenAI(base_url="http://localhost:1234/v1", api_key="not-needed")
 #GPT4All(model_name='neuralbeagle14-7b.Q5_K_S.gguf', model_path=Path.home() / '.cache' / 'lm-studio' / 'models' / 'TheBloke' / 'NeuralBeagle14-7B-GGUF', device='cpu', allow_download=False) # device='amd', device='intel'
 # model = GPT4All(model_name='mixtral-8x7b-instruct-v0.1.Q5_0.gguf', model_path=Path.home() / '.cache' / 'lm-studio' / 'models' / 'TheBloke' / 'Mixtral-8x7B-Instruct-v0.1-GGUF', device='cpu', allow_download=False) # device='amd', device='intel'
 
-mydir = Path.home() / 'OneDrive' / 'Documents' / 'throawaylien' / 'test' / 'throawaylien.txt'
+mydir = Path.home() / 'OneDrive' / 'Documents' / 'throawaylien' / 'test' / 'throawaylien.txt' #'Throawaylien - Throawaylien.pdf'
 # C:\Users\joshs\OneDrive\Documents\throawaylien
 print("loading directory", mydir)
 print(mydir)
 loader = TextLoader(mydir.absolute(), autodetect_encoding=True)
+#loader = DirectoryLoader(mydir.absolute(), glob="**/*.txt")
 print("instantiated loader")
 data = loader.load()
 
@@ -49,19 +50,24 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
-)
 
-print("about to invoke the rag_chain")
 
-question = input("Enter your prompt: ")
-for chunk in rag_chain.stream(question):
-    print(chunk, end="", flush=True)
-print("just finished invoking the rag_chain")
-# cleanup
+def enter_question():
+    print("about to invoke the rag_chain")
+    rag_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    question = input("Enter your prompt: ")
+    for chunk in rag_chain.stream(question):
+        print(chunk, end="", flush=True)
+    print("just finished invoking the rag_chain")
+    # cleanup
+
+while True:
+    enter_question()
+
 vectorstore.delete_collection()
-
