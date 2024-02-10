@@ -14,12 +14,11 @@ client = OpenAI(api_key='doesntmatter', base_url='http://localhost:1234/v1')
 
 def query_ai(question):
     sysmsg = """You are a helpful assistant who is an expert in summarizing and answer questions about lore you hold in memory.
-        It is critical that anything the user requests is delivered in the format of valid JSON.
-        You will be provided a sentence, and a context that represents mythology or "lore". Please generate a relevant question about the sentence provided to you, and generate a concise answer to that question based on the lore/mythology provided.
-        The question you generate should be directly related to the sentence you are provided.
+        You will be provided a sentence or sentences, and a context that represents mythology or "lore". Please generate a relevant question about the sentence(s) provided to you, and generate a concise answer to that question based on the lore/mythology provided.
+        The question you generate should be directly related to the sentence(s) you are provided.
         It's critical that the question and answer you generate be on the topic of the included context.
         Please make sure your answers are BRIEF and NOT REPETITIVE. 
-        Never respond with ANYTHING other than the json you create and under no cirumstances will you repeat the request, prompt input, or summarize what you did.
+        Never respond with ANYTHING other than the QUESTION/ANSWER you create and under no cirumstances will you repeat the request, prompt input, or summarize what you did.
         Make sure your response only follows this example: '''QUESTION: is this a sample question about the content? ANSWER: this is a sample answer about the content.'''. Your response will ONLY ever follow that format.
         Always ensure that "QUESTION" and "ANSWER" are capitalized.
         """
@@ -269,8 +268,13 @@ Many of you have sent me very nice messages and I thank you all. I appreciate th
             output = output.strip('\n')
             synthetic_data = output
             breaks = synthetic_data.split("ANSWER: ")
-            answer = breaks[1]
-            question = breaks[0].split("QUESTION: ")[1]
+            if len(breaks) > 1:
+                answer = breaks[1]
+                question = breaks[0].split("QUESTION: ")[1]
+            else:
+                breaks = synthetic_data.split("Answer: ")
+                answer = breaks[1]
+                question = breaks[0].split("Question: ")[1]
 
             with open("synthetic_data3.json", "a") as fi:
                 #data = json.dumps(synthetic_data).removeprefix('\\n')
