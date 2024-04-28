@@ -1,62 +1,73 @@
-from gpt4all import GPT4All
 from pathlib import Path
-import os
-import bs4
-#from openai import OpenAI
 
-# from langchain.agents import load_tools
-# from langchain.agents import initialize_agent
-# from langchain.agents import AgentType
-from langchain_openai import OpenAI
+from langchain.llms import OpenAI
+import chromadb
+
+from langchain_openai import OpenAIEmbeddings
+
+from langchain_core.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain_community.embeddings import GPT4AllEmbeddings
+from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyPDFLoader
+#from langchain_community.embeddings import GPT4AllEmbeddings
 from langchain import hub
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma, FAISS
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables import RunnablePassthrough
-# from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
 print("loading model")
-# model = GPT4All('C:\\Users\\joshs\\.cache\\lm-studio\\models\\TheBloke\dolphin-2.6-mixtral-8x7b.Q4_K_M.gguf', device='amd') # device='amd', device='intel'
 client = OpenAI(base_url="http://localhost:1234/v1", api_key="not-needed")
 
-#GPT4All(model_name='neuralbeagle14-7b.Q5_K_S.gguf', model_path=Path.home() / '.cache' / 'lm-studio' / 'models' / 'TheBloke' / 'NeuralBeagle14-7B-GGUF', device='cpu', allow_download=False) # device='amd', device='intel'
-# model = GPT4All(model_name='mixtral-8x7b-instruct-v0.1.Q5_0.gguf', model_path=Path.home() / '.cache' / 'lm-studio' / 'models' / 'TheBloke' / 'Mixtral-8x7B-Instruct-v0.1-GGUF', device='cpu', allow_download=False) # device='amd', device='intel'
-
-mydir = Path.home() / 'OneDrive' / 'Documents' / 'throawaylien' / 'test' / 'throawaylien.txt' #'Throawaylien - Throawaylien.pdf'
+fulldir = Path.home() / 'OneDrive' / 'Documents' / 'throawaylien'
 # C:\Users\joshs\OneDrive\Documents\throawaylien
-print("loading directory", mydir)
-print(mydir)
-loader = TextLoader(mydir.absolute(), autodetect_encoding=True)
-#loader = DirectoryLoader(mydir.absolute(), glob="**/*.txt")
+#loaderTEXT = TextLoader(pathy)
+dirloader = DirectoryLoader(fulldir.absolute(), glob='**/*.txt', loader_cls=TextLoader)
+#loaderPDF = PyPDFLoader(pathypdf)
 print("instantiated loader")
-data = loader.load()
+dirdata = dirloader.load()
 
 # print("Data was: ", data)
 print("splitting text and embedding using gpt4all embeddings")
-data[0].metadata = {'keywords': 'some random metadata'}
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-splits = text_splitter.split_documents(data)
-vectorstore = Chroma.from_documents(documents=splits, embedding=GPT4AllEmbeddings())
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=3000, chunk_overlap=100)
+splits = text_splitter.split_documents(dirdata)
+
+embeddings = OpenAIEmbeddings(
+    base_url="http://localhost:1234/v1",
+    api_key="n/a",
+    model="nomic-ai/nomic-embed-text-v1.5-GGUF",
+    # model="text-embedding-3-small",
+    # embedding_ctx_length=1000,
+    # tiktoken_enabled=True,
+    )
+new_client = chromadb.EphemeralClient()
+vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
 print("finished the vectorestore")
 # Retrieve and generate using the relevant snippets of the blog.
 retriever = vectorstore.as_retriever()
 prompt = hub.pull("rlm/rag-prompt")
 llm = client
 
+template = """Use the provided pieces of context to answer the question at the end.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.
+Keep the answer as concise as possible.
+
+CONTEXT:
+
+```{context}```
+
+QUESTION: {question}
+
+HELPFUL ANSWER:"""
+custom_rag_prompt = PromptTemplate.from_template(template)
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
-
-
-
 
 def enter_question():
     print("about to invoke the rag_chain")
     rag_chain = (
         {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
+        | custom_rag_prompt
         | llm
         | StrOutputParser()
     )
