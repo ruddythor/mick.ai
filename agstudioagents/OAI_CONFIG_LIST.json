@@ -1,0 +1,17 @@
+[
+    {
+        "model": "llama3",
+        "api_key": "n/a",
+        "base_url": "http://localhost:8000/v1"
+    },
+    {
+        "model": "userproxy_llama3",
+        "api_key": "n/a",
+        "base_url": "http://localhost:8000/v1"
+    },
+    {
+        "model": "code_runner_llama3",
+        "api_key": "n/a",
+        "base_url": "http://localhost:8000/v1"
+    }
+]
