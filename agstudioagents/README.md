@@ -11,6 +11,8 @@ On Windows:
 ```
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 mkdir code && cd code
+git clone git@github.com:ruddythor/mick.ai.git
+cd mick.ai/agstudioagents
 python3 -m venv ./venvy
 .\venvy\Scripts\Activate.ps1
 pip install -r reqs.txt
