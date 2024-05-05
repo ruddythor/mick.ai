@@ -1,8 +1,13 @@
 ######
 INSTALL
 
-On Windows:
+-------
+CRITICAL WARNING
 
+The below will enable an AI model to generate and run code on your computer. Do not do this unless YOU TRUST THE AI MODEL to not write malicious code.
+
+
+On Windows:
 ```
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 mkdir code && cd code
